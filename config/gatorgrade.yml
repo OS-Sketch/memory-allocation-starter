@@ -1,0 +1,123 @@
+setup: |
+  cd project/clang && make all
+  cd project/golang/ && make all
+  echo "Done installing project dependencies!"
+---
+
+# Reminder for ^^^:
+# All commands executed in the setup block are done in a
+# one-by-one fashion from the current working directory. This means
+# that there is no history associated with running the commands and
+# thus multiple commands must be run in a single chain.
+
+# perform checks on a file
+- project/clang/run-sizeof.c:
+    - description: Ensure that the run-sizeof.c file exists in project/clang
+      check: ConfirmFileExists
+    - description: Complete all TODOs, remove the TODO markers, and rewrite comments for run-sizeof.c
+      check: MatchFileFragment
+      options:
+        fragment: TODO
+        count: 0
+        exact: true
+    - description: Call a suitable sizeof-like function in a C program
+      check: MatchFileFragment
+      options:
+        fragment: sizeof(
+        count: 4
+        exact: false
+    - description: Use single-line comment character sequence in a C program
+      check: MatchFileFragment
+      options:
+        fragment: //
+        count: 10
+        exact: false
+
+# perform checks on a file
+- project/golang/run-sizeof.go:
+    - description: Ensure that the run-sizeof.go file exists in project/golang
+      check: ConfirmFileExists
+    - description: Complete all TODOs, remove the TODO markers, and rewrite comments for run-sizeof.go
+      check: MatchFileFragment
+      options:
+        fragment: TODO
+        count: 0
+        exact: true
+    - description: Call a suitable sizeof-like function in a Go program
+      check: MatchFileFragment
+      options:
+        fragment: unsafe.Sizeof(
+        count: 4
+        exact: false
+    - description: Use single-line comment character sequence in a Go program
+      check: MatchFileFragment
+      options:
+        fragment: //
+        count: 10
+        exact: false
+
+# run a command to confirm correct golang code formatting
+- description: Use go fmt to confirm that run-sizeof.go is formatted correctly
+  command: output=$(go fmt project/golang/run-sizeof.go 2>&1); test -z "$output"
+
+# run a command for the clang program and confirm zero exit code
+- description: Run the bin/run-sizeof program in the project/clang and ensure it does not crash
+  command: ./project/clang/bin/run-sizeof
+
+# run the clang program and confirm correct number of lines in the output
+- description: Run the bin/run-sizeof program in the project/clang and confirm at least nine non-blank output lines
+  check: CountCommandOutput
+  options:
+    command: ./project/clang/bin/run-sizeof
+    count: 9
+    exact: false
+
+# run a command for the golang program and confirm a zero exit code
+- description: Run the bin/run-sizeof program in the project/golang and ensure it does not crash
+  command: ./project/golang/bin/run-sizeof
+
+# run the program and confirm correct number of lines in the output
+- description: Run the bin/run-sizeof program in the project/golang and confirm at least nine non-blank output lines
+  check: CountCommandOutput
+  options:
+    command: ./project/golang/bin/run-sizeof
+    count: 9
+    exact: false
+
+# perform checks on a file
+- writing/reflection.md:
+    - description: Ensure that the reflection.md file exists in the writing/ directory
+      check: ConfirmFileExists
+    - description: Complete all TODOs, remove the TODO markers, and rewrite comments for the reflection
+      check: MatchFileFragment
+      options:
+        fragment: TODO
+        count: 0
+        exact: true
+    - description: Delete the 'Add Your Name Here' prompt in the reflection file
+      check: MatchFileFragment
+      options:
+        fragment: "Add Your Name Here"
+        count: 0
+        exact: true
+    - description: Write a minimum of 500 meaningful words in the reflection
+      check: CountFileWords
+      options:
+        count: 500
+        exact: false
+    - check: CountMarkdownTags
+      options:
+        tag: heading
+        count: 15
+        exact: false
+    - check: CountMarkdownTags
+      options:
+        tag: code_block
+        count: 2
+        exact: false
+
+# count number of commits in the GitHub repository
+- description: Have at least a specific minimum number of 10 commits in repository
+  check: CountCommits
+  options:
+    count: 10
